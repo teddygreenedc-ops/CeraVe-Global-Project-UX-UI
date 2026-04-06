@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RoutineLog — prototype</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #eeede9;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9a9a96;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --green: #1D9E75;
+    --green-bg: #E1F5EE;
+    --green-text: #085041;
+    --amber-bg: #FEF3DC;
+    --amber-text: #633806;
+    --amber-border: rgba(186,117,23,0.3);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #e8e7e3;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 32px 16px 48px;
+  }
+
+  .prototype-label {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .phone {
+    width: 375px;
+    min-height: 680px;
+    background: var(--bg);
+    border-radius: 40px;
+    border: 1.5px solid rgba(0,0,0,0.15);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .statusbar {
+    height: 44px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .statusbar-right {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .signal-bar {
+    width: 3px;
+    background: var(--text);
+    border-radius: 1px;
+  }
+
+  .screen { display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .screen-body {
+    flex: 1;
+    padding: 24px 20px 20px;
+    overflow-y: auto;
+  }
+
+  .navbar {
+    height: 56px;
+    background: var(--bg);
+    border-top: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: var(--bg3);
+  }
+
+  .nav-icon.active { background: var(--text); }
+
+  .nav-label {
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .nav-label.active { color: var(--text); font-weight: 500; }
+
+  h1 { font-size: 24px; font-weight: 600; color: var(--text); line-height: 1.2; margin-bottom: 6px; }
+  h2 { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  p  { font-size: 14px; color: var(--text2); line-height: 1.5; }
+
+  .label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 8px;
+    margin-top: 16px;
+    display: block;
+  }
+
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .chip {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    background: var(--bg);
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .chip:hover { border-color: var(--green); color: var(--green-text); }
+  .chip.selected { background: var(--green-bg); border-color: var(--green); color: var(--green-text); font-weight: 500; }
+
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text);
+    transition: opacity 0.15s;
+    text-align: center;
+  }
+
+  .btn:hover { opacity: 0.8; }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text2);
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .card {
+    background: var(--bg2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .card-sub   { font-size: 12px; color: var(--text2); line-height: 1.4; }
+
+  .insight {
+    background: var(--amber-bg);
+    border: 1px solid var(--amber-border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .insight-title { font-size: 13px; font-weight: 600; color: var(--amber-text); margin-bottom: 4px; }
+  .insight-body  { font-size: 13px; color: var(--amber-text); line-height: 1.5; }
+
+  .photo-placeholder {
+    background: var(--bg2);
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius);
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    gap: 8px;
+    transition: background 0.15s;
+    margin-bottom: 4px;
+  }
+
+  .photo-placeholder:hover { background: var(--bg3); }
+
+  .photo-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .photo-icon svg { width: 18px; height: 18px; stroke: var(--text2); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .photo-taken {
+    background: var(--green-bg);
+    border: 1.5px solid var(--green);
+  }
+
+  .photo-taken .photo-icon { background: var(--green); }
+  .photo-taken .photo-icon svg { stroke: white; }
+  .photo-taken .photo-label { color: var(--green-text); font-weight: 500; }
+
+  .photo-label { font-size: 13px; color: var(--text2); }
+  .photo-hint  { font-size: 11px; color: var(--text3); text-align: center; }
+
+  .feel-row { display: flex; gap: 8px; margin-top: 4px; }
+
+  .feel-btn {
+    flex: 1;
+    padding: 10px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    text-align: center;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    background: var(--bg);
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .feel-btn:hover { border-color: var(--border2); color: var(--text); }
+  .feel-btn.selected { background: var(--green-bg); border-color: var(--green); color: var(--green-text); font-weight: 500; }
+
+  .week-dots { display: flex; gap: 6px; align-items: center; margin-bottom: 16px; }
+
+  .week-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bg3);
+  }
+
+  .week-dot.done { background: var(--green); }
+  .week-dot.current { background: var(--text); }
+
+  .progress-track {
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+
+  .progress-fill {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--green);
+    transition: width 0.6s ease;
+  }
+
+  .progress-label { font-size: 11px; color: var(--text3); margin-bottom: 16px; }
+
+  .photo-compare {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .photo-compare-item {
+    flex: 1;
+    height: 100px;
+    background: var(--bg2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .compare-label { font-size: 10px; color: var(--text3); }
+
+  .compare-thumb {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg3);
+  }
+
+  .compare-thumb.now { background: linear-gradient(135deg, #d4ede4, #b3dfd0); }
+
+  .streak-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+
+  .streak-num {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .streak-text { font-size: 13px; color: var(--text2); }
+
+  .divider {
+    height: 0.5px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+
+  .text-center { text-align: center; }
+  .mt-4  { margin-top: 4px; }
+  .mt-8  { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .mt-24 { margin-top: 24px; }
+  .mb-8  { margin-bottom: 8px; }
+  .mb-12 { margin-bottom: 12px; }
+  .mb-16 { margin-bottom: 16px; }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    margin-bottom: 16px;
+    padding: 4px 0;
+  }
+
+  .back-btn svg { width: 16px; height: 16px; stroke: var(--text2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .flow-hint {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 6px;
+  }
+
+  .success-check {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--green-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .success-check svg { width: 28px; height: 28px; stroke: var(--green); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--green-bg);
+    color: var(--green-text);
+    margin-bottom: 10px;
+  }
+
+  @media (max-width: 400px) {
+    .phone { width: 100%; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+
+<p class="prototype-label">RoutineLog &nbsp;·&nbsp; interactive prototype</p>
+
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="statusbar">
+    <span>9:41</span>
+    <div class="statusbar-right">
+      <div style="display:flex;gap:1px;align-items:flex-end">
+        <div class="signal-bar" style="height:4px"></div>
+        <div class="signal-bar" style="height:6px"></div>
+        <div class="signal-bar" style="height:8px"></div>
+        <div class="signal-bar" style="height:10px"></div>
+      </div>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" style="margin-left:2px">
+        <rect x="0" y="3" width="13" height="8" rx="2" stroke="currentColor" stroke-width="1.2"/>
+        <rect x="1" y="4" width="9" height="6" rx="1" fill="currentColor"/>
+        <path d="M14 5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- SCREEN 1: Onboarding -->
+  <div class="screen active" id="s-onboarding" style="min-height: 636px;">
+    <div class="screen-body">
+      <div class="tag">New here?</div>
+      <h1>Build a skincare routine that actually works</h1>
+      <p class="mt-8 mb-16">We'll track your progress week by week so you know when to be patient — and when to switch.</p>
+
+      <span class="label">What's your main concern?</span>
+      <div class="chip-group" id="concern-chips">
+        <div class="chip selected" onclick="toggleChip(this,'concern-chips')">Acne</div>
+        <div class="chip" onclick="toggleChip(this,'concern-chips')">Dryness</div>
+        <div class="chip" onclick="toggleChip(this,'concern-chips')">Redness</div>
+        <div class="chip" onclick="toggleChip(this,'concern-chips')">Texture</div>
+        <div class="chip" onclick="toggleChip(this,'concern-chips')">Dark spots</div>
+        <div class="chip" onclick="toggleChip(this,'concern-chips')">Oiliness</div>
+      </div>
+
+      <span class="label">Where are you in your routine?</span>
+      <div class="chip-group" id="stage-chips">
+        <div class="chip selected" onclick="toggleChip(this,'stage-chips')">Just starting out</div>
+        <div class="chip" onclick="toggleChip(this,'stage-chips')">1–2 weeks in</div>
+        <div class="chip" onclick="toggleChip(this,'stage-chips')">1+ month in</div>
+      </div>
+
+      <span class="label">What's your skin type?</span>
+      <div class="chip-group" id="type-chips">
+        <div class="chip" onclick="toggleChip(this,'type-chips')">Oily</div>
+        <div class="chip selected" onclick="toggleChip(this,'type-chips')">Combination</div>
+        <div class="chip" onclick="toggleChip(this,'type-chips')">Dry</div>
+        <div class="chip" onclick="toggleChip(this,'type-chips')">Sensitive</div>
+      </div>
+
+      <div class="mt-24">
+        <button class="btn btn-primary" onclick="goTo('s-checkin')">Set my start date →</button>
+        <p class="flow-hint">Takes less than a minute</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: Weekly check-in -->
+  <div class="screen" id="s-checkin" style="min-height: 636px;">
+    <div class="screen-body">
+      <div class="back-btn" onclick="goTo('s-onboarding')">
+        <svg viewBox="0 0 16 16"><polyline points="10 4 6 8 10 12"/></svg>
+        Back
+      </div>
+
+      <div class="tag">Week 3 check-in</div>
+      <h2>How's your skin this week?</h2>
+      <p class="mt-4 mb-16" style="font-size:13px;">Take your photo by a window, same side as last time.</p>
+
+      <div class="photo-placeholder" id="photo-area" onclick="takePhoto()">
+        <div class="photo-icon">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <span class="photo-label" id="photo-label">Tap to take photo</span>
+        <span class="photo-hint" id="photo-hint">Face a window · same angle each week</span>
+      </div>
+
+      <span class="label">How does your skin feel today?</span>
+      <div class="feel-row" id="feel-btns">
+        <div class="feel-btn" onclick="selectFeel(this)">Worse</div>
+        <div class="feel-btn selected" onclick="selectFeel(this)">About the same</div>
+        <div class="feel-btn" onclick="selectFeel(this)">Better</div>
+      </div>
+
+      <span class="label">Did you skip any products this week?</span>
+      <div style="margin-top:4px">
+        <div class="feel-btn" id="skip-no" style="margin-bottom:6px; text-align:left; padding:11px 14px;" onclick="selectSkip('no')">No, stuck to my routine</div>
+        <div class="feel-btn" id="skip-yes" style="text-align:left; padding:11px 14px;" onclick="selectSkip('yes')">Yes — I switched something</div>
+      </div>
+
+      <div class="mt-20">
+        <button class="btn btn-primary" onclick="goTo('s-summary')">Save check-in →</button>
+        <p class="flow-hint">Week 3 of 8</p>
+      </div>
+    </div>
+
+    <div class="navbar">
+      <div class="nav-item" onclick="goTo('s-home')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon active"></div>
+        <span class="nav-label active">Log</span>
+      </div>
+      <div class="nav-item" onclick="goTo('s-progress')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Progress</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Summary / feedback -->
+  <div class="screen" id="s-summary" style="min-height: 636px;">
+    <div class="screen-body">
+      <div class="success-check">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+
+      <h2 class="text-center mb-8">Week 3 saved</h2>
+      <p class="text-center mb-16" style="font-size:13px;">Here's where you stand.</p>
+
+      <div class="week-dots">
+        <div class="week-dot done"></div>
+        <div class="week-dot done"></div>
+        <div class="week-dot current"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <span style="font-size:11px; color:var(--text3); margin-left:4px;">wk 3 of 8</span>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" style="width: 38%"></div>
+      </div>
+      <p class="progress-label">38% through your routine</p>
+
+      <div class="insight">
+        <p class="insight-title">You're right on track</p>
+        <p class="insight-body">Week 3 is the hardest — your skin is still adjusting. Most people don't notice visible change until weeks 5–6. Stick with it.</p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Side-by-side</p>
+        <div class="photo-compare mt-8">
+          <div class="photo-compare-item">
+            <div class="compare-thumb"></div>
+            <span class="compare-label">Week 1</span>
+          </div>
+          <div class="photo-compare-item">
+            <div class="compare-thumb now"></div>
+            <span class="compare-label">Week 3 · now</span>
+          </div>
+        </div>
+        <p style="font-size:11px; color:var(--text3);">Subtle changes are often invisible day-to-day but visible week-to-week.</p>
+      </div>
+
+      <div class="streak-row">
+        <span class="streak-num">3</span>
+        <div>
+          <p class="card-title">Week streak</p>
+          <p class="card-sub">Keep going — consistency is everything</p>
+        </div>
+      </div>
+
+      <div class="mt-8">
+        <button class="btn btn-primary mb-8" onclick="goTo('s-home')">Go to home →</button>
+        <button class="btn btn-ghost" onclick="goTo('s-progress')">View full progress</button>
+      </div>
+    </div>
+
+    <div class="navbar">
+      <div class="nav-item" onclick="goTo('s-home')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item" onclick="goTo('s-checkin')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Log</span>
+      </div>
+      <div class="nav-item" onclick="goTo('s-progress')">
+        <div class="nav-icon active"></div>
+        <span class="nav-label active">Progress</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: Home -->
+  <div class="screen" id="s-home" style="min-height: 636px;">
+    <div class="screen-body">
+      <p style="font-size:13px; color:var(--text2); margin-bottom:2px;">Good morning</p>
+      <h1 style="font-size:22px;">Your routine</h1>
+
+      <div class="divider"></div>
+
+      <div class="week-dots mt-4 mb-12">
+        <div class="week-dot done"></div>
+        <div class="week-dot done"></div>
+        <div class="week-dot current"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <span style="font-size:11px; color:var(--text3); margin-left:4px;">week 3 of 8</span>
+      </div>
+
+      <div class="insight mb-12">
+        <p class="insight-title">This week's reminder</p>
+        <p class="insight-body">You're in the adjustment phase. Temporary breakouts or dryness now are normal — not a sign to switch products.</p>
+      </div>
+
+      <div class="card mb-8">
+        <p class="card-title">Morning routine</p>
+        <p class="card-sub">Cleanser · Niacinamide serum · Moisturiser · SPF 30</p>
+      </div>
+
+      <div class="card mb-16">
+        <p class="card-title">Evening routine</p>
+        <p class="card-sub">Cleanser · Retinol (x3/week) · Moisturiser</p>
+      </div>
+
+      <button class="btn btn-primary" onclick="goTo('s-checkin')">Log this week's check-in →</button>
+    </div>
+
+    <div class="navbar">
+      <div class="nav-item">
+        <div class="nav-icon active"></div>
+        <span class="nav-label active">Home</span>
+      </div>
+      <div class="nav-item" onclick="goTo('s-checkin')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Log</span>
+      </div>
+      <div class="nav-item" onclick="goTo('s-progress')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Progress</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: Progress -->
+  <div class="screen" id="s-progress" style="min-height: 636px;">
+    <div class="screen-body">
+      <h2 class="mb-16">Progress</h2>
+
+      <div class="week-dots mb-4">
+        <div class="week-dot done"></div>
+        <div class="week-dot done"></div>
+        <div class="week-dot current"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+        <div class="week-dot"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+        <span style="font-size:11px; color:var(--text3);">Week 1</span>
+        <span style="font-size:11px; color:var(--text3);">Week 8</span>
+      </div>
+
+      <div class="card mb-12">
+        <p class="card-title" style="margin-bottom:10px;">How your skin felt each week</p>
+        <div style="display:flex; gap:5px; align-items:flex-end; height:60px;">
+          <div style="flex:1; background:var(--bg3); border-radius:3px 3px 0 0; height:40%"></div>
+          <div style="flex:1; background:var(--bg3); border-radius:3px 3px 0 0; height:30%"></div>
+          <div style="flex:1; background:var(--green); border-radius:3px 3px 0 0; height:50%"></div>
+          <div style="flex:1; background:var(--bg3); border-radius:3px 3px 0 0; height:20%; opacity:0.4;"></div>
+          <div style="flex:1; background:var(--bg3); border-radius:3px 3px 0 0; height:20%; opacity:0.4;"></div>
+          <div style="flex:1; background:var(--bg3); border-radius:3px 3px 0 0; height:20%; opacity:0.4;"></div>
+          <div style="flex:1; background:var(--bg3); border-radius:3px 3px 0 0; height:20%; opacity:0.4;"></div>
+          <div style="flex:1; background:var(--bg3); border-radius:3px 3px 0 0; height:20%; opacity:0.4;"></div>
+        </div>
+        <div style="display:flex; gap:5px; margin-top:4px;">
+          <span style="flex:1; font-size:10px; color:var(--text3); text-align:center;">1</span>
+          <span style="flex:1; font-size:10px; color:var(--text3); text-align:center;">2</span>
+          <span style="flex:1; font-size:10px; color:var(--green-text); text-align:center; font-weight:500;">3</span>
+          <span style="flex:1; font-size:10px; color:var(--text3); text-align:center;">4</span>
+          <span style="flex:1; font-size:10px; color:var(--text3); text-align:center;">5</span>
+          <span style="flex:1; font-size:10px; color:var(--text3); text-align:center;">6</span>
+          <span style="flex:1; font-size:10px; color:var(--text3); text-align:center;">7</span>
+          <span style="flex:1; font-size:10px; color:var(--text3); text-align:center;">8</span>
+        </div>
+      </div>
+
+      <div class="card mb-12">
+        <p class="card-title" style="margin-bottom:10px;">Photo timeline</p>
+        <div class="photo-compare">
+          <div class="photo-compare-item">
+            <div class="compare-thumb"></div>
+            <span class="compare-label">Week 1</span>
+          </div>
+          <div class="photo-compare-item">
+            <div class="compare-thumb" style="background:#dce8e0;"></div>
+            <span class="compare-label">Week 2</span>
+          </div>
+          <div class="photo-compare-item">
+            <div class="compare-thumb now"></div>
+            <span class="compare-label">Week 3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="streak-row mb-16">
+        <span class="streak-num">3</span>
+        <div>
+          <p class="card-title">Week streak</p>
+          <p class="card-sub">Consistent since you started</p>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="goTo('s-checkin')">Log this week →</button>
+    </div>
+
+    <div class="navbar">
+      <div class="nav-item" onclick="goTo('s-home')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Home</span>
+      </div>
+      <div class="nav-item" onclick="goTo('s-checkin')">
+        <div class="nav-icon"></div>
+        <span class="nav-label">Log</span>
+      </div>
+      <div class="nav-item">
+        <div class="nav-icon active"></div>
+        <span class="nav-label active">Progress</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:20px; text-align:center;">
+  <p style="font-size:11px; color:#999; margin-bottom:8px;">Jump to any screen</p>
+  <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;">
+    <button onclick="goTo('s-onboarding')" style="font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid #ccc; background:#fff; cursor:pointer; color:#555;">Onboarding</button>
+    <button onclick="goTo('s-home')" style="font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid #ccc; background:#fff; cursor:pointer; color:#555;">Home</button>
+    <button onclick="goTo('s-checkin')" style="font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid #ccc; background:#fff; cursor:pointer; color:#555;">Check-in</button>
+    <button onclick="goTo('s-summary')" style="font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid #ccc; background:#fff; cursor:pointer; color:#555;">Summary</button>
+    <button onclick="goTo('s-progress')" style="font-size:11px; padding:5px 12px; border-radius:20px; border:1px solid #ccc; background:#fff; cursor:pointer; color:#555;">Progress</button>
+  </div>
+</div>
+
+<script>
+  function goTo(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggleChip(el, groupId) {
+    document.querySelectorAll('#' + groupId + ' .chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function selectFeel(el) {
+    document.querySelectorAll('#feel-btns .feel-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function selectSkip(val) {
+    document.getElementById('skip-no').classList.remove('selected');
+    document.getElementById('skip-yes').classList.remove('selected');
+    document.getElementById('skip-' + val).classList.add('selected');
+  }
+
+  var photoDone = false;
+  function takePhoto() {
+    photoDone = !photoDone;
+    var area = document.getElementById('photo-area');
+    var label = document.getElementById('photo-label');
+    var hint = document.getElementById('photo-hint');
+    if (photoDone) {
+      area.classList.add('photo-taken');
+      label.textContent = 'Photo saved';
+      hint.textContent = 'Tap to retake';
+    } else {
+      area.classList.remove('photo-taken');
+      label.textContent = 'Tap to take photo';
+      hint.textContent = 'Face a window · same angle each week';
+    }
+  }
+</script>
+</body>
+</html>
